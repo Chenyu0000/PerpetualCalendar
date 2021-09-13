@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Calendar for June 2018</title>
+</head>
+
+<body>
+	<div id="app">
+		<img src="https://media.istockphoto.com/illustrations/honeysuckles-redoute-flower-illustrations-illustration-id515839631?k=6&m=515839631&s=612x612&w=0&h=fj5c6AwTnJFFfgOG_o1hqRblxgZJ_Lm4wLn4RWieoKE="
+		/>
+		<div>
+			<!--<input type="text" id="month"  value="Test">-->
+		</div>
+		<button id='left' v-on:click='month_Index === 0 ? (month_Index = 11, year--) : month_Index-- '>
+			<--</button>
+				<h1 id="Month">
+					{{ month }} {{year}}
+				</h1>
+                <button id='right' v-on:click='month_Index === 11 ? (month_Index = 0 , year++) : month_Index++ '>--></button>
+                <div>
+				<div id="daysAndDates">
+					<div class="Days" id="Days">
+						<span v-for="(day, index) in days " v-bind:class="[(index !== 0 || index !== 6) ? 'Weekdays' : 'Weekends']">{{day}}</span>
+					</div>
+					
+					<div class="Dates" id='dates' v-for='(row, index) in totalDates'>
+						<span v-for="(dateSelf, d_index) in row" v-bind:class="{
+                		'lg' : dateSelf.month !== month,
+                		'gray' : dateSelf.ifWeekends && (dateSelf.month === month),
+                		'black' : !(dateSelf.month !== month) && !dateSelf.ifWeekends,
+						'today' : dateSelf.iftoday(),
+						'select': dateSelf=== selectedDate,
+                        }"
+                        class="test"
+						v-on:click = "click(dateSelf)"
+						>
+						<span v-if= "dateSelf.iftoday()">{{dateSelf.date}}</span>
+						<a class="none" v-else >{{dateSelf.date}}</a>
+						</span>
+                    </div>
+                </div>
+                </div>
+				<p v-if="selectedDate == null">
+					{{`Please select a date`}}
+				</p>
+                <p v-if="selectedDate !== null">
+                    {{`${selectedDate.monthIndex + 1}-${selectedDate.date}-${selectedDate.year}: Week ${selectedDate.numberOfPerviousWeeks} Day ${selectedDate.numberOfPerviousDates}`}}
+                </p>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+	 crossorigin="anonymous"></script>
+
+	<script>
+		function getnowdate() {
+			const nowdate = new Date();
+			return [nowdate.getFullYear(), nowdate.getMonth(), nowdate.getDate()]
+		}
+
+		function initDays() {
+			return ["Sun", 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+		}
+		function iteratePerviousDates(year, month, Pervious_maxdates, start) {
+			let listOfpervious_Dates = [];
+			for (n = Pervious_maxdates - start + 1; n <= Pervious_maxdates; n++) {
+				let date = new DateSelf(year, month, n)
+				listOfpervious_Dates.push(date)
+			};
+			return listOfpervious_Dates
+		}
+		function iterateCurrentDates(year, month, maxdates) {
+			let listOfDates = [];
+			for (n = 1; n <= maxdates; n++) {
+				let date = new DateSelf(year, month, n)
+				listOfDates.push(date)
+			}
+			return listOfDates
+		}
+		function iterateFollowingDates(year, month, n_Following_Dates) {
+			let listOfFollowing_Dates = [];
+			for (n = 1; n <= n_Following_Dates; n++) {
+				let date = new DateSelf(year, month, n)
+				listOfFollowing_Dates.push(date)
+			}
+			return listOfFollowing_Dates
+		}
+		function converttoMonth(month_Index) {
+			let list_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+			return list_months[month_Index]
+		}
+		function getmaxdate(month, year) {
+			if (month === 'January' || month === 'March' || month === 'May' || month === 'July' || month === 'Aguest' || month === 'October' || month === 'December') {
+				return 31;
+			} else if (month === 'February') {
+				if ((year % 4 === 0 && year % 100 !== 0) || (year % 4 === 0 && year % 400 === 0)) {
+					return 29;
+				}
+				else {
+					return 28;
+				}
+			}
+			else {
+				return 30;
+			}
+		};
+		function getmonthIndex(month){
+			for(let n = 0; n < list_months.length;n++){
+				if (list_months[n] == month){
+					return n
+				}
+			}
+		}
+        function getnumberOfPerviousDates(year,monthIndex,date){
+            numberOfDates = 0;
+            for(let index = 0; index < monthIndex; index++){
+                numberOfDates += getmaxdate(converttoMonth(index),year)
+            }
+            numberOfDates += date
+            return numberOfDates
+
+        }
+        function getnumberOfPerviousWeek(numberOfDates){
+            return Math.ceil(numberOfDates/7)
+        }
+		class DateSelf {
+			constructor(year, month, date) {
+				this.year = year;
+				this.month = month;
+				this.date = date;
+				this.monthIndex = getmonthIndex(this.month)
+				this.day = new Date(`${month} ${date} ${year}`).getDay();
+				this.ifWeekends = (this.day == 0 || this.day == 6) ? true : null;
+				this.currentdate = new Date();
+				this.nowyear = this.currentdate.getFullYear();
+				this.nowmonth_Index = this.currentdate.getMonth();
+				this.ndate = this.currentdate.getDate();
+                this.numberOfPerviousDates = getnumberOfPerviousDates(this.year, this.monthIndex, this.date);
+                this.numberOfPerviousWeeks = getnumberOfPerviousWeek(this.numberOfPerviousDates)
+				
+			}
+			iftoday() {
+				return this.date === this.ndate && this.month === list_months[this.nowmonth_Index] && this.year === this.nowyear;
+			}
+
+		};
+		const list_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+		let vue = new Vue({
+			el: "#app",
+			data: {
+				month_Index: new Date().getMonth(),
+				days: initDays(),
+				year: new Date().getFullYear(),
+                selectedDate: null,
+                message: 'add something'
+			},
+			computed: {
+				month: function () {
+					return list_months[this.month_Index]
+				},
+				pervious_month: function () {
+					return list_months[(this.month_Index -1 +12)%12 ]
+				},
+				following_month: function () {
+					return list_months[(this.month_Index + 1 + 12)%12]
+				},
+				start: function () {
+					return new Date(`${this.month} 1 ${this.year}`).getDay()
+				},
+				maxdates: function () {
+					return getmaxdate(this.month, this.year)
+				},
+				Pervious_maxdates: function () {
+					return getmaxdate(this.pervious_month, this.year)
+				},
+				pervious_Dates: function () {
+					return iteratePerviousDates(this.year, this.pervious_month, this.Pervious_maxdates, this.start)
+				},
+				dates: function () {
+					return iterateCurrentDates(this.year, this.month, this.maxdates)
+				},
+				following_Dates: function () {
+					return iterateFollowingDates(this.year, this.following_month, this.n_Following_Dates)
+				},
+				length_TotalDates: function () {
+					return this.pervious_Dates.length + this.Dates.length + this.following_Dates.length
+				},
+				n_Following_Dates: function () {
+					return 7 - (this.start + this.maxdates) % 7
+				},
+				totalDates: function () {
+					let listOfDates = this.pervious_Dates.concat(this.dates, this.following_Dates)
+					let totalDates = [];
+					let numberOfRow = listOfDates.length / 7;
+					for (n = 0; n < numberOfRow; n++) {
+						let row = listOfDates.slice(n * 7, (n + 1) * 7);
+						totalDates.push(row)
+					}
+					return totalDates
+
+
+				},
+			},
+			filters: {
+				converToMonth: function (index) {
+					let list_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+					return list_months[index]
+				},
+				getDate: function (dateSelf) {
+					return dateSelf.date
+				},
+			},
+			methods: {
+				click: function(dateSelf) {
+					if (dateSelf.monthIndex === this.month_Index + 1){
+						this.month_Index ++
+					}
+					else if (dateSelf.monthIndex === this.month_Index - 1){
+						this.month_Index --
+					}
+					else if (dateSelf.monthIndex === 0 && this.month_Index === 11){
+						this.month_Index = 0
+						this.year++
+					}else if (dateSelf.monthIndex === 11 && this.month_Index === 0){
+						this.month_Index = 11
+						this.year--
+					}
+						if(this.selectedDate != dateSelf){
+                            this.selectedDate = dateSelf;
+					    }else{
+                            this.selectedDate = null;
+                        }
+                    
+				},
+			}
+		})
+
+	</script>
+
+	<style>
+		* {
+			box-sizing: border-box;
+			text-align: center;
+			position: relative;
+			font-family: 'Times New Roman', Times, serif;
+		}
+
+		.Weekends {
+			color: gray;
+		}
+
+		.Weekdays {
+			color: black;
+		}
+
+		.gray {
+			color: gray;
+		}
+
+		.lg {
+			color: lightgrey;
+		}
+
+		.black {
+			color: black;
+		}
+
+		img {
+			height: 300px
+		}
+
+		h1 {
+			font-style: oblique;
+			font-family: 'Times New Roman', Times, serif;
+		}
+
+		.today {
+			background: yellow !important;
+			border-radius: 100%;
+			position: relative;
+			border: 0px;
+			font-weight: bold;
+
+		}
+
+		div span {
+			font-size: 14px !important;
+			display: inline-block;
+			width: 40px;
+			height: 40px;
+			border-color: black;
+			border-style: solid;
+			border-width: 1px 0px 0px 1px;
+		}
+		span{
+			font-size: 14px !important;
+			display: inline-block;
+			width: 40px;
+			height: 40px;
+			border-color: black;
+			border-style: solid;
+			border-width: 1px 0px 0px 1px;
+		}
+		div {
+			font-size: 0px;
+		}
+
+		#Month {
+			font-size: 20px;
+			display: inline-block;
+		}
+
+		#left {
+			font-size: 5px;
+			margin-right: 30px;
+			display: inline-block;
+		}
+
+		#right {
+			font-size: 5px;
+			margin-left: 30px;
+			display: inline-block;
+		}
+
+		span.black:hover {
+			background: lightblue;
+		}
+
+		span.gray:hover {
+			background: lightblue;
+			border-width: 1px 1px 1px 1px;
+		}
+
+		div>.Dates:last-child span {
+			border-width: 1px 0px 1px 1px;
+		}
+
+		.Dates>span:last-child {
+			border-width: 1px 1px 0px 1px;
+		}
+
+		.Days span:last-child {
+			border-width: 1px 1px 0px 1px;
+		}
+
+		.Dates:last-child span:last-child {
+			border-width: 1px 1px 1px 1px;
+		}
+
+		p {
+            font-size: 24px;
+            margin-top : 50px;
+		}
+		.select{
+			background: blueviolet !important;
+            border-radius: 0%;
+		}
+	</style>
+
+</body>
+
+</html>
